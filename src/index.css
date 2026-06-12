@@ -1,0 +1,89 @@
+/* src/index.css */
+@import url("https://fonts.googleapis.com/css2?family=Lexend+Deca:wght@300;400;500;600;700;800;900&family=Montserrat:wght@400;600;700;800&family=Inter:wght@300;400;600&family=Playfair+Display:ital,wght@0,700;1,700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* Brand CSS variables */
+  :root {
+    --wale-green: #00a708;
+    --wale-dark: #02250a;
+    --wale-orange: #f8921e;
+    --wale-white: #f8fafc;
+  }
+
+  body {
+    font-family: "Lexend Deca", "Montserrat", sans-serif;
+    background-color: var(--wale-dark);
+    color: var(--wale-white);
+    overflow-x: hidden;
+    line-height: 1.6;
+  }
+
+  /* Base resets */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Heading scale — Lexend Deca (brand-font) */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  .brand-font {
+    font-family: "Lexend Deca", "Montserrat", sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+  }
+
+  /* Serif utility class — Playfair Display */
+  .serif,
+  .font-serif {
+    font-family: "Playfair Display", serif;
+  }
+
+  .italic {
+    font-style: italic;
+  }
+
+  /* Anchor resets */
+  a {
+    transition-property: color, background-color, border-color;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 200ms;
+  }
+}
+
+@layer utilities {
+  /* Custom font size utilities */
+  .text-2xs {
+    font-size: 0.625rem;
+    line-height: 1rem;
+  }
+
+  .text-3xs {
+    font-size: 0.5625rem;
+    line-height: 0.875rem;
+  }
+
+  /* Letter spacing utilities */
+  .tracking-widest-2 {
+    letter-spacing: 0.2em;
+  }
+
+  .tracking-widest-3 {
+    letter-spacing: 0.3em;
+  }
+
+  .tracking-widest-4 {
+    letter-spacing: 0.4em;
+  }
+
+  .tracking-widest-5 {
+    letter-spacing: 0.5em;
+  }
+}
