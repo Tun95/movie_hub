@@ -165,6 +165,21 @@ export const useInfiniteSearchMovies = (
   });
 };
 
+export const useDiscoverMovies = (filters?: SearchFilters) => {
+  return useInfiniteQuery({
+    queryKey: ["movies", "discover", filters],
+    queryFn: ({ pageParam = 1 }) =>
+      moviesApi.discoverMovies({ ...filters, page: pageParam as number }),
+    getNextPageParam: (lastPage: MovieResponse) => {
+      if (lastPage.page < lastPage.total_pages) {
+        return lastPage.page + 1;
+      }
+      return undefined;
+    },
+    initialPageParam: 1,
+  });
+};
+
 // ============================================
 // GENRE HOOKS
 // ============================================

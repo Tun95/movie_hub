@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Search as SearchIcon } from "lucide-react";
-import { useInfiniteSearchMovies } from "../../hooks/useMovies";
+import { useInfiniteSearchMovies, useDiscoverMovies } from "../../hooks/useMovies";
 import MovieCard from "../common/MovieCard";
 import Loader from "../common/Loader";
 import Filters, { FilterState } from "../common/Filters";
@@ -22,24 +22,12 @@ const Search: React.FC = () => {
   });
 
   const debouncedQuery = useDebounce(searchQuery, 500);
+  const hasSearchTerm = debouncedQuery.length > 0;
 
-  // Convert FilterState to API-compatible filters
-  const getApiFilters = () => {
-    const apiFilters: {
-      genre?: number;
-      year?: number;
-      minRating?: number;
-      sortBy?: string;
-    } = {};
-
-    if (filters.genre !== null) apiFilters.genre = filters.genre;
-    if (filters.year !== null) apiFilters.year = filters.year;
-    if (filters.minRating !== null) apiFilters.minRating = filters.minRating;
-    if (filters.sortBy) apiFilters.sortBy = filters.sortBy;
-
-    return apiFilters;
-  };
-
+  // Use discover for initial load (popular movies), search for queries
+  const searchHook = useInfiniteSearchMovies(debouncedQuery, {});
+  const discoverHook = useDiscoverMovies({});
+  
   const {
     data,
     isLoading,
@@ -47,13 +35,80 @@ const Search: React.FC = () => {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useInfiniteSearchMovies(debouncedQuery, getApiFilters());
+  } = hasSearchTerm ? searchHook : discoverHook;
 
   useEffect(() => {
     if (debouncedQuery) {
       setSearchParams({ q: debouncedQuery });
+    } else if (!debouncedQuery && initialQuery) {
+      setSearchParams({});
     }
-  }, [debouncedQuery, setSearchParams]);
+  }, [debouncedQuery, setSearchParams, initialQuery]);
+
+  // Flatten all movies from all pages
+  const allMovies: Movie[] = data?.pages.flatMap((page) => page.results) || [];
+  const totalResults = data?.pages[0]?.total_results || 0;
+
+  // CLIENT-SIDE FILTERING - All filters applied here
+  const filteredAndSortedMovies = useMemo(() => {
+    let filtered = [...allMovies];
+
+    // Apply genre filter
+    if (filters.genre !== null) {
+      filtered = filtered.filter(
+        (movie) => movie.genre_ids && movie.genre_ids.includes(filters.genre!)
+      );
+    }
+
+    // Apply year filter
+    if (filters.year !== null) {
+      filtered = filtered.filter((movie) => {
+        const movieYear = new Date(movie.release_date).getFullYear();
+        return movieYear === filters.year;
+      });
+    }
+
+    // Apply rating filter
+    if (filters.minRating !== null) {
+      filtered = filtered.filter(
+        (movie) => movie.vote_average >= filters.minRating!
+      );
+    }
+
+    // Apply sorting
+    switch (filters.sortBy) {
+      case "popularity.desc":
+        filtered.sort((a, b) => b.popularity - a.popularity);
+        break;
+      case "vote_average.desc":
+        filtered.sort((a, b) => b.vote_average - a.vote_average);
+        break;
+      case "vote_average.asc":
+        filtered.sort((a, b) => a.vote_average - b.vote_average);
+        break;
+      case "release_date.desc":
+        filtered.sort(
+          (a, b) =>
+            new Date(b.release_date).getTime() -
+            new Date(a.release_date).getTime()
+        );
+        break;
+      case "release_date.asc":
+        filtered.sort(
+          (a, b) =>
+            new Date(a.release_date).getTime() -
+            new Date(b.release_date).getTime()
+        );
+        break;
+      case "original_title.asc":
+        filtered.sort((a, b) => a.title.localeCompare(b.title));
+        break;
+      default:
+        filtered.sort((a, b) => b.popularity - a.popularity);
+    }
+
+    return filtered;
+  }, [allMovies, filters]);
 
   const handleFilterChange = (newFilters: FilterState) => {
     setFilters(newFilters);
@@ -76,7 +131,7 @@ const Search: React.FC = () => {
           fetchNextPage();
         }
       },
-      { threshold: 0.1 },
+      { threshold: 0.1, rootMargin: "100px" }
     );
 
     if (loaderRef.current) {
@@ -90,9 +145,31 @@ const Search: React.FC = () => {
     };
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  // Flatten all movies from all pages - properly typed
-  const allMovies: Movie[] = data?.pages.flatMap((page) => page.results) || [];
-  const totalResults = data?.pages[0]?.total_results || 0;
+  // Get genre name for display
+  const getGenreName = (genreId: number) => {
+    const genres: Record<number, string> = {
+      28: "Action",
+      12: "Adventure",
+      16: "Animation",
+      35: "Comedy",
+      80: "Crime",
+      99: "Documentary",
+      18: "Drama",
+      10751: "Family",
+      14: "Fantasy",
+      36: "History",
+      27: "Horror",
+      10402: "Music",
+      9648: "Mystery",
+      10749: "Romance",
+      878: "Science Fiction",
+      10770: "TV Movie",
+      53: "Thriller",
+      10752: "War",
+      37: "Western",
+    };
+    return genres[genreId] || `Genre ${genreId}`;
+  };
 
   return (
     <div className="min-h-screen py-24 px-8 max-w-7xl mx-auto">
@@ -125,11 +202,48 @@ const Search: React.FC = () => {
         />
       </div>
 
+      {/* Active Filters Display */}
+      {(filters.genre !== null ||
+        filters.year !== null ||
+        filters.minRating !== null ||
+        filters.sortBy !== "popularity.desc") && (
+        <div className="mb-4 flex flex-wrap gap-2 items-center">
+          <span className="text-sm text-gray-400">Active filters:</span>
+          {filters.genre !== null && (
+            <span className="px-2 py-1 bg-brand-orange/20 text-brand-orange rounded-md text-xs">
+              {getGenreName(filters.genre)}
+            </span>
+          )}
+          {filters.year !== null && (
+            <span className="px-2 py-1 bg-brand-orange/20 text-brand-orange rounded-md text-xs">
+              Year: {filters.year}
+            </span>
+          )}
+          {filters.minRating !== null && (
+            <span className="px-2 py-1 bg-brand-orange/20 text-brand-orange rounded-md text-xs">
+              Rating: {filters.minRating}+
+            </span>
+          )}
+          {filters.sortBy !== "popularity.desc" && (
+            <span className="px-2 py-1 bg-brand-orange/20 text-brand-orange rounded-md text-xs">
+              Sort:{" "}
+              {filters.sortBy.replace(/\.(desc|asc)/, " $1").replace(/_/g, " ")}
+            </span>
+          )}
+          <button
+            onClick={handleClearFilters}
+            className="px-2 py-1 bg-gray-700 text-gray-300 rounded-md text-xs hover:bg-gray-600 transition-colors"
+          >
+            Clear all
+          </button>
+        </div>
+      )}
+
       {/* Results */}
       <div>
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-semibold">
-            {debouncedQuery ? (
+            {hasSearchTerm ? (
               <>
                 Search Results for "
                 <span className="text-brand-orange">{debouncedQuery}</span>"
@@ -137,11 +251,10 @@ const Search: React.FC = () => {
             ) : (
               "Discover Movies"
             )}
-            {totalResults > 0 && (
-              <span className="text-gray-400 text-sm ml-2">
-                ({totalResults} results found)
-              </span>
-            )}
+            <span className="text-gray-400 text-sm ml-2">
+              ({filteredAndSortedMovies.length} results
+              {totalResults > 0 && ` from ${totalResults} total`})
+            </span>
           </h2>
         </div>
 
@@ -149,21 +262,25 @@ const Search: React.FC = () => {
 
         {error && (
           <div className="text-center text-red-500 py-10">
-            Failed to load search results. Please try again.
+            Failed to load results. Please try again.
           </div>
         )}
 
-        {!isLoading && !error && allMovies.length === 0 && debouncedQuery && (
+        {!isLoading && !error && filteredAndSortedMovies.length === 0 && (
           <div className="text-center text-gray-400 py-20">
-            <p className="text-lg">No movies found for "{debouncedQuery}"</p>
+            <p className="text-lg">
+              {hasSearchTerm
+                ? `No movies found for "${debouncedQuery}"`
+                : "No movies match your filters"}
+            </p>
             <p className="text-sm mt-2">Try adjusting your search or filters</p>
           </div>
         )}
 
-        {!isLoading && !error && allMovies.length > 0 && (
+        {filteredAndSortedMovies.length > 0 && (
           <>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-              {allMovies.map((movie: Movie, index: number) => (
+              {filteredAndSortedMovies.map((movie: Movie, index: number) => (
                 <MovieCard
                   key={`${movie.id}-${index}`}
                   id={movie.id}
@@ -177,38 +294,24 @@ const Search: React.FC = () => {
               ))}
             </div>
 
-            {/* Load More Trigger */}
+            {/* Infinite Scroll Loader */}
             <div ref={loaderRef} className="flex justify-center py-8">
               {isFetchingNextPage && (
                 <div className="flex items-center gap-2">
                   <Loader size="small" />
-                  <span className="text-gray-400">Loading more...</span>
+                  <span className="text-gray-400">Loading more movies...</span>
                 </div>
               )}
-              {!hasNextPage && allMovies.length > 0 && (
-                <p className="text-gray-500 text-sm">
-                  You've reached the end! 🎬
-                </p>
-              )}
+              {!hasNextPage &&
+                !isFetchingNextPage &&
+                filteredAndSortedMovies.length > 0 && (
+                  <p className="text-gray-500 text-sm">
+                    ✨ You've reached the end! ✨
+                  </p>
+                )}
             </div>
           </>
         )}
-
-        {/* Load More Button Alternative */}
-        {!isLoading &&
-          !error &&
-          allMovies.length > 0 &&
-          hasNextPage &&
-          !isFetchingNextPage && (
-            <div className="flex justify-center py-8">
-              <button
-                onClick={() => fetchNextPage()}
-                className="px-6 py-2 bg-brand-orange text-white rounded-lg hover:bg-brand-green transition-colors font-semibold"
-              >
-                Load More Movies
-              </button>
-            </div>
-          )}
       </div>
     </div>
   );
