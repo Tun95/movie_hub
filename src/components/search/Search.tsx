@@ -1,15 +1,17 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Search as SearchIcon } from "lucide-react";
-import { useSearchMovies } from "../../hooks/useMovies";
+import { useInfiniteSearchMovies } from "../../hooks/useMovies";
 import MovieCard from "../common/MovieCard";
 import Loader from "../common/Loader";
 import Filters, { FilterState } from "../common/Filters";
 import { useDebounce } from "../../hooks/useDebounce";
+import type { Movie } from "../../types/movies/movie.types";
 
 const Search: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialQuery = searchParams.get("q") || "";
+  const loaderRef = useRef<HTMLDivElement>(null);
 
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [filters, setFilters] = useState<FilterState>({
@@ -20,12 +22,32 @@ const Search: React.FC = () => {
   });
 
   const debouncedQuery = useDebounce(searchQuery, 500);
-  const { data, isLoading, error } = useSearchMovies(
-    debouncedQuery,
-    1,
-    filters,
-  );
-//   const { data: genres } = useGenres();
+
+  // Convert FilterState to API-compatible filters
+  const getApiFilters = () => {
+    const apiFilters: {
+      genre?: number;
+      year?: number;
+      minRating?: number;
+      sortBy?: string;
+    } = {};
+
+    if (filters.genre !== null) apiFilters.genre = filters.genre;
+    if (filters.year !== null) apiFilters.year = filters.year;
+    if (filters.minRating !== null) apiFilters.minRating = filters.minRating;
+    if (filters.sortBy) apiFilters.sortBy = filters.sortBy;
+
+    return apiFilters;
+  };
+
+  const {
+    data,
+    isLoading,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteSearchMovies(debouncedQuery, getApiFilters());
 
   useEffect(() => {
     if (debouncedQuery) {
@@ -46,7 +68,31 @@ const Search: React.FC = () => {
     });
   };
 
-  const movies = data?.results || [];
+  // Intersection Observer for infinite scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 },
+    );
+
+    if (loaderRef.current) {
+      observer.observe(loaderRef.current);
+    }
+
+    return () => {
+      if (loaderRef.current) {
+        observer.unobserve(loaderRef.current);
+      }
+    };
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  // Flatten all movies from all pages - properly typed
+  const allMovies: Movie[] = data?.pages.flatMap((page) => page.results) || [];
+  const totalResults = data?.pages[0]?.total_results || 0;
 
   return (
     <div className="min-h-screen py-24 px-8 max-w-7xl mx-auto">
@@ -91,9 +137,9 @@ const Search: React.FC = () => {
             ) : (
               "Discover Movies"
             )}
-            {data && (
+            {totalResults > 0 && (
               <span className="text-gray-400 text-sm ml-2">
-                ({data.total_results} results found)
+                ({totalResults} results found)
               </span>
             )}
           </h2>
@@ -107,29 +153,62 @@ const Search: React.FC = () => {
           </div>
         )}
 
-        {!isLoading && !error && movies.length === 0 && debouncedQuery && (
+        {!isLoading && !error && allMovies.length === 0 && debouncedQuery && (
           <div className="text-center text-gray-400 py-20">
             <p className="text-lg">No movies found for "{debouncedQuery}"</p>
             <p className="text-sm mt-2">Try adjusting your search or filters</p>
           </div>
         )}
 
-        {!isLoading && !error && movies.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-            {movies.map((movie, index) => (
-              <MovieCard
-                key={movie.id}
-                id={movie.id}
-                title={movie.title}
-                posterPath={movie.poster_path}
-                releaseDate={movie.release_date}
-                rating={movie.vote_average}
-                voteCount={movie.vote_count}
-                index={index}
-              />
-            ))}
-          </div>
+        {!isLoading && !error && allMovies.length > 0 && (
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+              {allMovies.map((movie: Movie, index: number) => (
+                <MovieCard
+                  key={`${movie.id}-${index}`}
+                  id={movie.id}
+                  title={movie.title}
+                  posterPath={movie.poster_path}
+                  releaseDate={movie.release_date}
+                  rating={movie.vote_average}
+                  voteCount={movie.vote_count}
+                  index={index}
+                />
+              ))}
+            </div>
+
+            {/* Load More Trigger */}
+            <div ref={loaderRef} className="flex justify-center py-8">
+              {isFetchingNextPage && (
+                <div className="flex items-center gap-2">
+                  <Loader size="small" />
+                  <span className="text-gray-400">Loading more...</span>
+                </div>
+              )}
+              {!hasNextPage && allMovies.length > 0 && (
+                <p className="text-gray-500 text-sm">
+                  You've reached the end! 🎬
+                </p>
+              )}
+            </div>
+          </>
         )}
+
+        {/* Load More Button Alternative */}
+        {!isLoading &&
+          !error &&
+          allMovies.length > 0 &&
+          hasNextPage &&
+          !isFetchingNextPage && (
+            <div className="flex justify-center py-8">
+              <button
+                onClick={() => fetchNextPage()}
+                className="px-6 py-2 bg-brand-orange text-white rounded-lg hover:bg-brand-green transition-colors font-semibold"
+              >
+                Load More Movies
+              </button>
+            </div>
+          )}
       </div>
     </div>
   );

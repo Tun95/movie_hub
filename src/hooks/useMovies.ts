@@ -2,7 +2,6 @@ import {
   useQuery,
   UseQueryResult,
   useInfiniteQuery,
-  UseInfiniteQueryResult,
 } from "@tanstack/react-query";
 import { moviesApi } from "../api/moviesApi";
 import type {
@@ -21,7 +20,7 @@ export const usePopularMovies = (page = 1): UseQueryResult<MovieResponse> => {
   return useQuery({
     queryKey: ["movies", "popular", page],
     queryFn: () => moviesApi.getPopular(page),
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5,
   });
 };
 
@@ -121,7 +120,7 @@ export const useRecommendations = (
   });
 };
 
-// Define SearchFilters type for search
+// Define SearchFilters type
 export interface SearchFilters {
   genre?: number;
   year?: number;
@@ -130,7 +129,7 @@ export interface SearchFilters {
 }
 
 // ============================================
-// SEARCH HOOKS - FIXED
+// SEARCH HOOKS
 // ============================================
 
 export const useSearchMovies = (
@@ -146,6 +145,26 @@ export const useSearchMovies = (
   });
 };
 
+// Infinite scroll version - returns the correct structure
+export const useInfiniteSearchMovies = (
+  query: string,
+  filters?: SearchFilters,
+) => {
+  return useInfiniteQuery({
+    queryKey: ["movies", "search", "infinite", query, filters],
+    queryFn: ({ pageParam = 1 }) =>
+      moviesApi.searchMovies(query, pageParam as number, filters),
+    getNextPageParam: (lastPage: MovieResponse) => {
+      if (lastPage.page < lastPage.total_pages) {
+        return lastPage.page + 1;
+      }
+      return undefined;
+    },
+    initialPageParam: 1,
+    enabled: query.length > 0,
+  });
+};
+
 // ============================================
 // GENRE HOOKS
 // ============================================
@@ -154,44 +173,6 @@ export const useGenres = () => {
   return useQuery({
     queryKey: ["genres"],
     queryFn: () => moviesApi.getGenres(),
-    staleTime: 1000 * 60 * 60, // 1 hour
-  });
-};
-
-// ============================================
-// INFINITE SCROLLING HOOKS - FIXED
-// ============================================
-
-export const useInfinitePopularMovies =
-  (): UseInfiniteQueryResult<MovieResponse> => {
-    return useInfiniteQuery({
-      queryKey: ["movies", "popular", "infinite"],
-      queryFn: ({ pageParam = 1 }) => moviesApi.getPopular(pageParam as number),
-      getNextPageParam: (lastPage) => {
-        if (lastPage.page < lastPage.total_pages) {
-          return lastPage.page + 1;
-        }
-        return undefined;
-      },
-      initialPageParam: 1,
-    });
-  };
-
-export const useInfiniteSearchMovies = (
-  query: string,
-  filters?: SearchFilters,
-): UseInfiniteQueryResult<MovieResponse> => {
-  return useInfiniteQuery({
-    queryKey: ["movies", "search", "infinite", query, filters],
-    queryFn: ({ pageParam = 1 }) =>
-      moviesApi.searchMovies(query, pageParam as number, filters),
-    getNextPageParam: (lastPage) => {
-      if (lastPage.page < lastPage.total_pages) {
-        return lastPage.page + 1;
-      }
-      return undefined;
-    },
-    initialPageParam: 1,
-    enabled: query.length > 0,
+    staleTime: 1000 * 60 * 60,
   });
 };

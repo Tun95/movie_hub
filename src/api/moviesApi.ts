@@ -105,7 +105,11 @@ class MoviesApiService {
       sortBy?: string;
     },
   ): Promise<MovieResponse> {
-    const params: Record<string, unknown> = { query, page };
+    const params: Record<string, unknown> = {
+      query,
+      page,
+      include_adult: false,
+    };
 
     if (filters) {
       if (filters.genre) params.with_genres = filters.genre;

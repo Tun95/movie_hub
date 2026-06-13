@@ -17,7 +17,7 @@ const MovieDetail: React.FC = () => {
     isLoading: movieLoading,
     error: movieError,
   } = useMovieDetails(id!);
-  const { data: credits, isLoading: creditsLoading } = useMovieCredits(id!);
+  const { data: credits } = useMovieCredits(id!);
   const { data: similarMovies, isLoading: similarLoading } = useSimilarMovies(
     id!,
   );
