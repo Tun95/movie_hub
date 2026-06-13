@@ -1,10 +1,11 @@
 import React from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Home, Search, TrendingUp, Star, Calendar } from "lucide-react";
 
 const Sidebar: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const navItems = [
     { path: "/", label: "Home", icon: Home },
@@ -12,41 +13,34 @@ const Sidebar: React.FC = () => {
   ];
 
   const sections = [
-    {
-      label: "Popular",
-      icon: TrendingUp,
-      path: "/?section=popular",
-      id: "popular",
-    },
-    {
-      label: "Top Rated",
-      icon: Star,
-      path: "/?section=top-rated",
-      id: "top-rated",
-    },
-    {
-      label: "Upcoming",
-      icon: Calendar,
-      path: "/?section=upcoming",
-      id: "upcoming",
-    },
+    { label: "Popular", icon: TrendingUp, sectionId: "popular" },
+    { label: "Top Rated", icon: Star, sectionId: "top-rated" },
+    { label: "Upcoming", icon: Calendar, sectionId: "upcoming" },
   ];
 
   const handleSectionClick = (
     e: React.MouseEvent<HTMLAnchorElement>,
-    path: string,
     sectionId: string,
   ) => {
     e.preventDefault();
-    if (path === "/?section=popular") {
-      navigate("/");
-      setTimeout(() => {
-        const element = document.getElementById(sectionId);
-        if (element) {
-          element.scrollIntoView({ behavior: "smooth" });
-        }
-      }, 100);
+
+    // If we're not on home page, navigate to home first
+    if (location.pathname !== "/") {
+      navigate(`/?section=${sectionId}`);
+    } else {
+      // If on home page, just scroll to section
+      const element = document.getElementById(sectionId);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "start" });
+        // Update URL without reload
+        window.history.pushState(null, "", `/?section=${sectionId}`);
+      }
     }
+  };
+
+  const isSectionActive = (sectionId: string) => {
+    const params = new URLSearchParams(location.search);
+    return location.pathname === "/" && params.get("section") === sectionId;
   };
 
   return (
@@ -108,22 +102,18 @@ const Sidebar: React.FC = () => {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.5, delay: (index + 2) * 0.1 }}
                 >
-                  <NavLink
-                    to={section.path}
-                    onClick={(e) =>
-                      handleSectionClick(e, section.path, section.id)
-                    }
-                    className={({ isActive }) =>
-                      `flex items-center gap-3 px-4 py-2 rounded-lg transition-all ${
-                        isActive
-                          ? "text-brand-orange bg-white/5"
-                          : "text-gray-400 hover:text-white hover:bg-white/5"
-                      }`
-                    }
+                  <a
+                    href={`/?section=${section.sectionId}`}
+                    onClick={(e) => handleSectionClick(e, section.sectionId)}
+                    className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all cursor-pointer ${
+                      isSectionActive(section.sectionId)
+                        ? "text-brand-orange bg-white/5"
+                        : "text-gray-400 hover:text-white hover:bg-white/5"
+                    }`}
                   >
                     <section.icon size={16} />
                     <span className="text-sm">{section.label}</span>
-                  </NavLink>
+                  </a>
                 </motion.div>
               ))}
             </div>

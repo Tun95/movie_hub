@@ -1,11 +1,27 @@
 import React, { useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import HeroSection from "./sections/HeroSection";
+import NowPlayingMovies from "./sections/NowPlayingMovies";
 import PopularMovies from "./sections/PopularMovies";
 import TopRatedMovies from "./sections/TopRatedMovies";
 import UpcomingMovies from "./sections/UpcomingMovies";
-import NowPlayingMovies from "./sections/NowPlayingMovies";
 
 const Home: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const section = searchParams.get("section");
+
+  // Scroll to section when URL param changes
+  useEffect(() => {
+    if (section) {
+      const element = document.getElementById(section);
+      if (element) {
+        setTimeout(() => {
+          element.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 100);
+      }
+    }
+  }, [section]);
+
   // Scroll reveal effect
   useEffect(() => {
     const revealElements = document.querySelectorAll(".reveal");
@@ -29,12 +45,20 @@ const Home: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-brand-dark text-white overflow-hidden">
+    <div className="min-h-screen bg-brand-dark text-white">
       <HeroSection />
-      <NowPlayingMovies />
-      <PopularMovies />
-      <TopRatedMovies />
-      <UpcomingMovies />
+      <div id="now-playing">
+        <NowPlayingMovies />
+      </div>
+      <div id="popular">
+        <PopularMovies />
+      </div>
+      <div id="top-rated">
+        <TopRatedMovies />
+      </div>
+      <div id="upcoming">
+        <UpcomingMovies />
+      </div>
     </div>
   );
 };

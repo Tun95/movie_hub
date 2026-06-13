@@ -22,24 +22,9 @@ const MobileSidebar: React.FC = () => {
   ];
 
   const sections = [
-    {
-      label: "Popular",
-      icon: TrendingUp,
-      path: "/?section=popular",
-      id: "popular",
-    },
-    {
-      label: "Top Rated",
-      icon: Star,
-      path: "/?section=top-rated",
-      id: "top-rated",
-    },
-    {
-      label: "Upcoming",
-      icon: Calendar,
-      path: "/?section=upcoming",
-      id: "upcoming",
-    },
+    { label: "Popular", icon: TrendingUp, sectionId: "popular" },
+    { label: "Top Rated", icon: Star, sectionId: "top-rated" },
+    { label: "Upcoming", icon: Calendar, sectionId: "upcoming" },
   ];
 
   // Close drawer when route changes
@@ -61,20 +46,28 @@ const MobileSidebar: React.FC = () => {
 
   const handleSectionClick = (
     e: React.MouseEvent<HTMLAnchorElement>,
-    path: string,
     sectionId: string,
   ) => {
     e.preventDefault();
     setIsOpen(false);
-    if (path === "/?section=popular") {
-      navigate("/");
-      setTimeout(() => {
-        const element = document.getElementById(sectionId);
-        if (element) {
-          element.scrollIntoView({ behavior: "smooth" });
-        }
-      }, 300);
+
+    // If we're not on home page, navigate to home first
+    if (location.pathname !== "/") {
+      navigate(`/?section=${sectionId}`);
+    } else {
+      // If on home page, just scroll to section
+      const element = document.getElementById(sectionId);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "start" });
+        // Update URL without reload
+        window.history.pushState(null, "", `/?section=${sectionId}`);
+      }
     }
+  };
+
+  const isSectionActive = (sectionId: string) => {
+    const params = new URLSearchParams(location.search);
+    return location.pathname === "/" && params.get("section") === sectionId;
   };
 
   return (
@@ -162,23 +155,21 @@ const MobileSidebar: React.FC = () => {
                   </h3>
                   <div className="space-y-1">
                     {sections.map((section) => (
-                      <NavLink
+                      <a
                         key={section.label}
-                        to={section.path}
+                        href={`/?section=${section.sectionId}`}
                         onClick={(e) =>
-                          handleSectionClick(e, section.path, section.id)
+                          handleSectionClick(e, section.sectionId)
                         }
-                        className={({ isActive }) =>
-                          `flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-                            isActive
-                              ? "text-brand-orange bg-white/5"
-                              : "text-gray-400 hover:text-white hover:bg-white/5"
-                          }`
-                        }
+                        className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all cursor-pointer ${
+                          isSectionActive(section.sectionId)
+                            ? "text-brand-orange bg-white/5"
+                            : "text-gray-400 hover:text-white hover:bg-white/5"
+                        }`}
                       >
                         <section.icon size={18} />
                         <span className="text-base">{section.label}</span>
-                      </NavLink>
+                      </a>
                     ))}
                   </div>
                 </div>

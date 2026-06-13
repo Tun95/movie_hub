@@ -6,7 +6,7 @@ const HeroSection: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <section className="relative min-h-[70vh] flex items-center justify-center overflow-hidden">
+    <section className="relative min-h-[50vh] flex items-center justify-center overflow-hidden">
       {/* Background Gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-brand-dark via-brand-dark/90 to-brand-green/20" />
       
