@@ -22,7 +22,7 @@ This project fulfills the Phase 1 take-home assessment requirements:
 ## 🚀 Live Demo
 
 **Deployed URL:**  
-https://moviehub.vercel.app
+https://movie-hub-brown-eight.vercel.app
 
 ---
 
@@ -51,7 +51,7 @@ https://moviehub.vercel.app
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/moviehub.git
+git clone https://github.com/Tun95/movie_hub.git
 cd moviehub
 ```
 
@@ -269,10 +269,10 @@ MIT License
 ## 📧 Submission Notes
 
 **Repository:**  
-https://github.com/yourusername/moviehub
+https://github.com/Tun95/movie_hub
 
 **Live Demo:**  
-https://moviehub.vercel.app
+https://movie-hub-brown-eight.vercel.app
 
 ### Assessment Status
 
