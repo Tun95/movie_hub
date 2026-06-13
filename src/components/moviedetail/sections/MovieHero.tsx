@@ -16,7 +16,7 @@ const MovieHero: React.FC<MovieHeroProps> = ({ movie }) => {
   const posterUrl = getImageUrl(movie.poster_path, imageSizes.poster.large);
 
   return (
-    <div className="relative min-h-[70vh] overflow-hidden">
+    <div className="relative z-10 text-center px-4 pt-16 lg:pt-0 max-w-4xl mx-auto">
       {/* Backdrop Image */}
       <div className="absolute inset-0">
         <img

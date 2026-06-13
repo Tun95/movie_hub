@@ -1,5 +1,6 @@
 import { Helmet } from "react-helmet-async";
 import Sidebar from "../../common/sidebar/Sidebar";
+import MobileSidebar from "../../common/sidebar/MobileSidebar";
 import Search from "../../components/search/Search";
 
 const SearchScreen = () => {
@@ -13,9 +14,11 @@ const SearchScreen = () => {
         />
       </Helmet>
 
+      <MobileSidebar />
+
       <div className="flex">
         <Sidebar />
-        <main className="flex-1 ml-64">
+        <main className="flex-1 lg:ml-64">
           <Search />
         </main>
       </div>

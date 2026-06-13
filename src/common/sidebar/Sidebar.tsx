@@ -50,9 +50,9 @@ const Sidebar: React.FC = () => {
   };
 
   return (
-    <aside className="fixed left-0 top-0 h-full w-64 bg-brand-dark/95 backdrop-blur-sm border-r border-gray-800 z-40">
+    <aside className="hidden lg:block fixed left-0 top-0 h-full w-64 bg-brand-dark/95 backdrop-blur-sm border-r border-gray-800 z-40">
       <div className="flex flex-col h-full">
-        {/* Logo - Matches mockup */}
+        {/* Logo */}
         <div className="p-6 border-b border-gray-800">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
@@ -95,7 +95,7 @@ const Sidebar: React.FC = () => {
             ))}
           </div>
 
-          {/* Discover Section - Matches mockup */}
+          {/* Discover Section */}
           <div>
             <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 px-4 mb-3">
               Discover
@@ -130,7 +130,7 @@ const Sidebar: React.FC = () => {
           </div>
         </nav>
 
-        {/* Footer in sidebar - simple credit */}
+        {/* Footer */}
         <div className="p-6 border-t border-gray-800">
           <p className="text-2xs text-gray-500 text-center">© 2026 MovieHub</p>
         </div>

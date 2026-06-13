@@ -1,5 +1,6 @@
 import { Helmet } from "react-helmet-async";
 import Sidebar from "../../common/sidebar/Sidebar";
+import MobileSidebar from "../../common/sidebar/MobileSidebar";
 import Home from "../../components/home/Home";
 
 const HomeScreen = () => {
@@ -17,9 +18,12 @@ const HomeScreen = () => {
         />
       </Helmet>
 
+      {/* Mobile Menu Button + Drawer */}
+      <MobileSidebar />
+
       <div className="flex">
         <Sidebar />
-        <main className="flex-1 ml-64">
+        <main className="flex-1 lg:ml-64">
           <Home />
         </main>
       </div>

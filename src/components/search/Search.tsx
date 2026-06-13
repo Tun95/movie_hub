@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Search as SearchIcon } from "lucide-react";
-import { useInfiniteSearchMovies, useDiscoverMovies } from "../../hooks/useMovies";
+import {
+  useInfiniteSearchMovies,
+  useDiscoverMovies,
+} from "../../hooks/useMovies";
 import MovieCard from "../common/MovieCard";
 import Loader from "../common/Loader";
 import Filters, { FilterState } from "../common/Filters";
@@ -27,7 +30,7 @@ const Search: React.FC = () => {
   // Use discover for initial load (popular movies), search for queries
   const searchHook = useInfiniteSearchMovies(debouncedQuery, {});
   const discoverHook = useDiscoverMovies({});
-  
+
   const {
     data,
     isLoading,
@@ -56,7 +59,7 @@ const Search: React.FC = () => {
     // Apply genre filter
     if (filters.genre !== null) {
       filtered = filtered.filter(
-        (movie) => movie.genre_ids && movie.genre_ids.includes(filters.genre!)
+        (movie) => movie.genre_ids && movie.genre_ids.includes(filters.genre!),
       );
     }
 
@@ -71,7 +74,7 @@ const Search: React.FC = () => {
     // Apply rating filter
     if (filters.minRating !== null) {
       filtered = filtered.filter(
-        (movie) => movie.vote_average >= filters.minRating!
+        (movie) => movie.vote_average >= filters.minRating!,
       );
     }
 
@@ -90,14 +93,14 @@ const Search: React.FC = () => {
         filtered.sort(
           (a, b) =>
             new Date(b.release_date).getTime() -
-            new Date(a.release_date).getTime()
+            new Date(a.release_date).getTime(),
         );
         break;
       case "release_date.asc":
         filtered.sort(
           (a, b) =>
             new Date(a.release_date).getTime() -
-            new Date(b.release_date).getTime()
+            new Date(b.release_date).getTime(),
         );
         break;
       case "original_title.asc":
@@ -131,7 +134,7 @@ const Search: React.FC = () => {
           fetchNextPage();
         }
       },
-      { threshold: 0.1, rootMargin: "100px" }
+      { threshold: 0.1, rootMargin: "100px" },
     );
 
     if (loaderRef.current) {
@@ -172,7 +175,7 @@ const Search: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen py-24 px-8 max-w-7xl mx-auto">
+    <div className="min-h-screen pt-20 lg:pt-24 pb-24 px-4 sm:px-8 max-w-7xl mx-auto">
       {/* Search Header */}
       <div className="mb-8">
         <h1 className="text-4xl font-bold mb-4">Search Movies</h1>
