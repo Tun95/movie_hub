@@ -67,23 +67,6 @@ const Filters: React.FC<FiltersProps> = ({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Convert FilterState to API-compatible filters
-  const getApiFilters = () => {
-    const apiFilters: {
-      genre?: number;
-      year?: number;
-      minRating?: number;
-      sortBy?: string;
-    } = {};
-
-    if (filters.genre !== null) apiFilters.genre = filters.genre;
-    if (filters.year !== null) apiFilters.year = filters.year;
-    if (filters.minRating !== null) apiFilters.minRating = filters.minRating;
-    if (filters.sortBy) apiFilters.sortBy = filters.sortBy;
-
-    return apiFilters;
-  };
-
   const filterContent = (
     <div className="space-y-6">
       {/* Genre Filter */}
